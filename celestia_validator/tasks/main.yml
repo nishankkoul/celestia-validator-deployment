@@ -7,7 +7,8 @@
     force_apt_get: yes
   tags: system_update
   register: update_upgrade_result
-  block:
+
+- block:
     - name: Log update and upgrade process
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_update.log
@@ -32,12 +33,6 @@
     state: present
   tags: dependencies
   register: install_dependencies_result
-  block:
-    - name: Log installation of dependencies
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_dependencies.log
-        line: "{{ ansible_date_time.iso8601 }} - Dependencies installed: {{ install_dependencies_result.stdout }}"
-        create: yes
 
 - name: Install Go programming language
   apt:
@@ -45,12 +40,6 @@
     state: present
   tags: install
   register: install_go_result
-  block:
-    - name: Log installation of Go programming language
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_go_install.log
-        line: "{{ ansible_date_time.iso8601 }} - Go installation completed: {{ install_go_result.stdout }}"
-        create: yes
 
 - name: Clone Celestia App repository
   git:
@@ -58,24 +47,20 @@
     dest: /root/celestia-app
   tags: celestia_clone
   register: clone_repo_result
-  block:
+
+- block:
     - name: Log cloning of Celestia App repository
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_clone.log
-        line: "{{ ansible_date_time.iso8601 }} - Repository cloned: {{ clone_repo_result.stdout }}"
+        line: "{{ ansible_date_time.iso8601 }} - Repository cloned. Changes made: {{ clone_repo_result.changed }}"
         create: yes
+  when: clone_repo_result is defined
 
 - name: Ensure safe Git directory configuration
   shell: |
     git config --global --add safe.directory /root/celestia-app
   tags: celestia_safe_git_dir
   register: git_safe_dir_result
-  block:
-    - name: Log Git safe directory configuration
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_git_safe_dir.log
-        line: "{{ ansible_date_time.iso8601 }} - Git safe directory configured: {{ git_safe_dir_result.stdout }}"
-        create: yes
 
 - name: Checkout the specified Celestia version
   shell: |
@@ -83,51 +68,36 @@
     git checkout "{{ celestia_version }}"
   tags: celestia_checkout
   register: git_checkout_result
-  block:
-    - name: Log Celestia version checkout
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_checkout.log
-        line: "{{ ansible_date_time.iso8601 }} - Checked out version {{ celestia_version }}: {{ git_checkout_result.stdout }}"
-        create: yes
 
 - name: Build Celestia application
   shell: |
-    wget "https://github.com/celestiaorg/celestia-app/releases/download/{{ celestia_version }}/celestia-app_Linux_x86_64.tar.gz"
+    wget "https://github.com/celestiaorg/celestia-app/releases/download/"{{ celestia_version }}"/celestia-app_Linux_x86_64.tar.gz"
     tar -xvf celestia-app_Linux_x86_64.tar.gz
     chmod +x celestia-appd
     mv celestia-appd /usr/local/bin/
     celestia-appd version
   tags: celestia_build
   register: celestia_build_result
-  block:
+
+- block:
     - name: Log Celestia application build
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_build.log
-        line: "{{ ansible_date_time.iso8601 }} - Celestia application built: {{ celestia_build_result.stdout }}"
+        line: "{{ ansible_date_time.iso8601 }} - Celestia application built. Changes made: {{ celestia_build_result.changed }}. Output: {{ celestia_build_result.stdout }}"
         create: yes
+  when: celestia_build_result is defined
 
 - name: Check if genesis.json exists
   stat:
     path: "{{ celestia_config_path }}/genesis.json"
   register: genesis_file
-  block:
-    - name: Log genesis.json existence check
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_genesis_check.log
-        line: "{{ ansible_date_time.iso8601 }} - Checked genesis.json existence: {{ genesis_file.stat.exists }}"
-        create: yes
 
 - name: Remove existing genesis.json if it exists
   file:
     path: "{{ celestia_config_path }}/genesis.json"
     state: absent
   when: genesis_file.stat.exists
-  block:
-    - name: Log genesis.json removal
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_genesis_removal.log
-        line: "{{ ansible_date_time.iso8601 }} - Removed existing genesis.json file"
-        create: yes
+  register: remove_genesis_result
 
 - name: Initialize Celestia configuration
   shell: |
@@ -135,12 +105,6 @@
   tags: celestia_init
   when: not genesis_file.stat.exists
   register: celestia_init_result
-  block:
-    - name: Log Celestia configuration initialization
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_init.log
-        line: "{{ ansible_date_time.iso8601 }} - Celestia configuration initialized with chain-id {{ celestia_chain_id }}: {{ celestia_init_result.stdout }}"
-        create: yes
 
 - name: Clone networks repository
   git:
@@ -149,12 +113,14 @@
     update: yes
   tags: genesis_clone
   register: networks_clone_result
-  block:
+
+- block:
     - name: Log networks repository cloning
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_genesis_clone.log
         line: "{{ ansible_date_time.iso8601 }} - Cloned networks repository from {{ celestia_networks_repo }}: {{ networks_clone_result.after }}"
         create: yes
+  when: networks_clone_result is defined
 
 - name: Copy genesis.json to Celestia config directory
   copy:
@@ -164,24 +130,13 @@
     group: root
     mode: '0644'
   tags: celestia_copy_genesis
-  block:
-    - name: Log genesis.json copying
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_copy_genesis.log
-        line: "{{ ansible_date_time.iso8601 }} - Copied genesis.json from {{ celestia_genesis_file }} to {{ celestia_config_path }}/genesis.json"
-        create: yes
+  register: genesis_copy_result
 
 - name: Reset Celestia node state with tendermint unsafe-reset-all
   shell: |
     celestia-appd tendermint unsafe-reset-all --home $HOME/.celestia-app
   tags: celestia_reset
   register: celestia_reset_result
-  block:
-    - name: Log Celestia node state reset
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_reset.log
-        line: "{{ ansible_date_time.iso8601 }} - Celestia node state reset: {{ celestia_reset_result.stdout }}"
-        create: yes
 
 - name: Set Seeds in Celestia configuration
   shell: |
@@ -190,12 +145,14 @@
     sed -i.bak -e "s/^seeds *=.*/seeds = \"$SEEDS\"/" $HOME/.celestia-app/config/config.toml
   tags: celestia_set_seeds
   register: celestia_set_seeds_result
-  block:
+
+- block:
     - name: Log Celestia seed configuration
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_seeds.log
         line: "{{ ansible_date_time.iso8601 }} - Seeds set for chain {{ celestia_chain_id }}: {{ celestia_set_seeds_result.stdout }}"
         create: yes
+  when: celestia_set_seeds_result is defined
 
 - name: Set Persistent Peers in Celestia configuration
   shell: |
@@ -204,12 +161,14 @@
     sed -i.bak -e "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $HOME/.celestia-app/config/config.toml
   tags: celestia_set_peers
   register: celestia_set_peers_result
-  block:
+
+- block:
     - name: Log Celestia persistent peers configuration
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_peers.log
         line: "{{ ansible_date_time.iso8601 }} - Persistent peers set for chain {{ celestia_chain_id }}: {{ celestia_set_peers_result.stdout }}"
         create: yes
+  when: celestia_set_peers_result is defined
 
 - name: Configure pruning settings in app.toml
   shell: |
@@ -218,12 +177,14 @@
     sed -i -e "s/^pruning-interval *=.*/pruning-interval = \"10\"/" /root/.celestia-app/config/app.toml
   tags: configure_pruning
   register: pruning_config_result
-  block:
+
+- block:
     - name: Log pruning configuration changes
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_pruning.log
         line: "{{ ansible_date_time.iso8601 }} - Pruning settings updated: {{ pruning_config_result.stdout }}"
         create: yes
+  when: pruning_config_result is defined
 
 - name: Quick Sync with Snapshot
   shell: |
@@ -236,12 +197,14 @@
     executable: /bin/bash
   tags: quick_sync
   register: quick_sync_result
-  block:
+
+- block:
     - name: Log snapshot quick sync operation
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_snapshot.log
         line: "{{ ansible_date_time.iso8601 }} - Quick sync completed: {{ quick_sync_result.stdout }}"
         create: yes
+  when: quick_sync_result is defined
 
 - name: Create SystemD service for celestia-appd
   copy:
@@ -265,24 +228,19 @@
     mode: '0644'
   tags: create_service
   register: systemd_service_result
-  block:
+
+- block:
     - name: Log SystemD service creation
       ansible.builtin.lineinfile:
         path: /var/log/celestia_validator_service.log
         line: "{{ ansible_date_time.iso8601 }} - SystemD service created: {{ systemd_service_result.dest }}"
         create: yes
+  when: systemd_service_result is defined
 
 - name: Load the BBR kernel module
   ansible.builtin.command: modprobe tcp_bbr
   register: bbr_load_result
   tags: load_bbr_kernel
-  block:
-    - name: Log BBR kernel module load
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - BBR kernel module loaded: {{ bbr_load_result.stdout | default('No output') }}"
-        create: yes
-      tags: load_bbr_kernel_log
 
 - name: Add BBR settings to /etc/sysctl.conf
   ansible.builtin.lineinfile:
@@ -294,116 +252,53 @@
     - "net.ipv4.tcp_congestion_control=bbr"
   register: bbr_settings_result
   tags: add_bbr_settings
-  block:
-    - name: Log BBR settings added to sysctl.conf
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - BBR settings added to /etc/sysctl.conf: {{ bbr_settings_result.stdout | default('No output') }}"
-        create: yes
-      tags: add_bbr_settings_log
 
 - name: Apply sysctl changes
   ansible.builtin.command: sysctl -p
   register: sysctl_apply_result
   tags: apply_sysctl_changes
-  block:
-    - name: Log sysctl changes application
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - Sysctl changes applied: {{ sysctl_apply_result.stdout | default('No output') }}"
-        create: yes
-      tags: apply_sysctl_changes_log
 
 - name: Verify BBR is enabled
   ansible.builtin.shell: sysctl net.ipv4.tcp_congestion_control
   register: bbr_status
   tags: verify_bbr_enabled
-  block:
-    - name: Log BBR verification
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - Verifying BBR status: {{ bbr_status.stdout | default('No output') }}"
-        create: yes
-      tags: verify_bbr_log
 
 - name: Check if BBR is correctly set
   ansible.builtin.debug:
     msg: "BBR is successfully enabled!"
   when: '"bbr" in bbr_status.stdout'
   tags: check_bbr_status
-  block:
-    - name: Log BBR success
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - BBR is successfully enabled!"
-        create: yes
-      tags: check_bbr_success_log
 
 - name: Fail if BBR is not enabled
   ansible.builtin.fail:
     msg: "BBR was not enabled. Please check your kernel configuration."
   when: '"bbr" not in bbr_status.stdout'
   tags: fail_bbr
-  block:
-    - name: Log BBR failure
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_bbr.log
-        line: "{{ ansible_date_time.iso8601 }} - BBR failed to enable. Please check your kernel configuration."
-        create: yes
-      tags: fail_bbr_log
 
 - name: Reload SystemD daemon
   command: systemctl daemon-reload
   register: daemon_reload_result
   tags: reload_systemd
-  block:
-    - name: Log SystemD daemon reload
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_service.log
-        line: "{{ ansible_date_time.iso8601 }} - Reloading SystemD daemon: {{ daemon_reload_result.stdout | default('No output') }}"
-        create: yes
-      tags: reload_systemd_log
 
 - name: Enable {{ celestia_service_name }} service
   systemd:
-    name: {{ celestia_service_name }}
+    name: "{{ celestia_service_name }}"
     enabled: true
   register: service_enable_result
   tags: enable_service
-  block:
-    - name: Log enabling of service
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_service.log
-        line: "{{ ansible_date_time.iso8601 }} - Enabling service {{ celestia_service_name }}: {{ service_enable_result.stdout | default('No output') }}"
-        create: yes
-      tags: enable_service_log
 
 - name: Start {{ celestia_service_name }} service
   systemd:
-    name: {{ celestia_service_name }}
+    name: "{{ celestia_service_name }}"
     state: started
   register: service_start_result
   tags: start_service
-  block:
-    - name: Log starting of service
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_service.log
-        line: "{{ ansible_date_time.iso8601 }} - Starting service {{ celestia_service_name }}: {{ service_start_result.stdout | default('No output') }}"
-        create: yes
-      tags: start_service_log
 
 - name: Configure Celestia application CLI keyring
   shell: |
     celestia-appd config keyring-backend test
   register: config_result
   tags: configure_keyring
-  block:
-    - name: Log Celestia keyring configuration
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_config.log
-        line: "{{ ansible_date_time.iso8601 }} - Celestia keyring configured: {{ config_result.stdout | default('No output') }}"
-        create: yes
-      tags: configure_keyring_log
 
 - name: Generate a new wallet
   shell: |
@@ -411,13 +306,6 @@
   register: wallet_creation_result
   no_log: true
   tags: generate_wallet
-  block:
-    - name: Log wallet creation
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_wallet.log
-        line: "{{ ansible_date_time.iso8601 }} - Wallet {{ celestia_wallet_name }} created."
-        create: yes
-      tags: generate_wallet_log
 
 - name: Create /etc/celestia directory if it doesn't exist
   file:
@@ -428,13 +316,6 @@
     mode: '0700'
   register: directory_creation_result
   tags: create_directory
-  block:
-    - name: Log directory creation
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_directory.log
-        line: "{{ ansible_date_time.iso8601 }} - Created /etc/celestia directory: {{ directory_creation_result.state }}"
-        create: yes
-      tags: create_directory_log
 
 - name: Ensure the wallet mnemonic is securely stored
   copy:
@@ -446,10 +327,3 @@
   no_log: true
   register: mnemonic_storage_result
   tags: store_mnemonic
-  block:
-    - name: Log mnemonic storage result
-      ansible.builtin.lineinfile:
-        path: /var/log/celestia_validator_wallet.log
-        line: "{{ ansible_date_time.iso8601 }} - Wallet mnemonic stored securely at /etc/celestia/wallet_mnemonic.txt."
-        create: yes
-      tags: store_mnemonic_log
