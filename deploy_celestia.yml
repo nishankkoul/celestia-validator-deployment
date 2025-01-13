@@ -1,0 +1,7 @@
+---
+- name: Deploy Celestia Validator Node on Mocha-4 Testnet
+  hosts: localhost
+  connection: local
+  become: yes
+  roles:
+    - celestia_validator

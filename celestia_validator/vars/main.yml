@@ -1,0 +1,14 @@
+# vars/main.yml
+
+celestia_repo: "https://github.com/celestiaorg/celestia-app.git"
+celestia_version: "v3.2.0"
+celestia_chain_id: "mocha-4"
+celestia_wallet_name: "nishank-wallet"
+celestia_networks_repo: "https://github.com/celestiaorg/networks"
+celestia_genesis_file: "/root/networks/mocha-4/genesis.json"
+celestia_snap_url: "https://s3.imperator.co/testnets-snapshots/celestia/celestia_chain_4141707.tar.zst"
+celestia_service_name: "celestia-appd"
+celestia_service_exec: "/usr/local/bin/celestia-appd start"
+celestia_config_path: "/root/.celestia-app/config"
+celestia_priv_validator_file: "/root/.celestia-app/data/priv_validator_state.json"
+celestia_snap_name: "celestia_chain_4141707.tar.zst"
