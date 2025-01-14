@@ -1,5 +1,4 @@
-MONIKER="nishank-wallet"
-VALIDATOR_WALLET="nishank-wallet"
+MONIKER="my-wallet"
 
 celestia-appd tx staking create-validator \
     --amount=1000000utia \
@@ -14,3 +13,4 @@ celestia-appd tx staking create-validator \
     --keyring-backend=test \
     --fees=21000utia \
     --gas=220000
+

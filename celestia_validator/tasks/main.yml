@@ -191,7 +191,7 @@
     cd $HOME
     wget -O "{{ celestia_snap_name }}" "{{ celestia_snap_url }}"
     cp ~/.celestia-app/data/priv_validator_state.json ~/.celestia-app/priv_validator_state.json
-    zstd -d --stdout {{ celestia_snap_name }} | tar xf - -C ~/.celestia-app
+    zstd -d --stdout "{{ celestia_snap_name }}" | tar xf - -C ~/.celestia-app
     cp ~/.celestia-app/priv_validator_state.json ~/.celestia-app/data/priv_validator_state.json
   args:
     executable: /bin/bash
