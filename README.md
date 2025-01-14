@@ -517,6 +517,9 @@ Next, you need to restart the service using the command:
 
 ```bash
 systemctl restart celestia-appd
+```
+
+```bash
 curl localhost:26660/metrics
 ```
 
@@ -567,7 +570,7 @@ To run the prometheus server:
 prometheus --config.file=/root/.celestia-app/config/prometheus.yml --web.listen-address="0.0.0.0:8080" &
 ```
 
-This will begin the server on **http://<EC2-IP-ADDRESS>:8080**
+This will begin the server on **http://{EC2-IP-ADDRESS}:8080**
 
 ![image](https://github.com/user-attachments/assets/51bd69c1-56d5-40bb-8c2a-c8df7b182d11)
 
@@ -585,7 +588,7 @@ sudo systemctl start grafana-server
 sudo systemctl enable grafana-server
 ```
 
-This will begin the server on **http://<EC2-IP-ADDRESS>:3000**. If you open the url on your browser you will see the Grafana login page. Use admin for both the user and password to log in.
+This will begin the server on **http://{EC2-IP-ADDRESS>}:3000**. If you open the url on your browser you will see the Grafana login page. Use admin for both the user and password to log in.
 
 ![image](https://github.com/user-attachments/assets/acbb7b15-353a-45fb-acad-8b645b522b6c)
 
