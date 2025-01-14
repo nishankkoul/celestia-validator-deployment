@@ -602,7 +602,23 @@ You will need to link the prometheus server as a data source. To do that go to "
 
 Next, we will be setting up the dashboard for these metrics: CPU Usage, Disk Usage, Free Memory, Peer Connections, Block Height and Sync Status.
 
-![image](https://github.com/user-attachments/assets/4cfebbf3-8822-4c57-a2a5-7d28f9b30058)
+![image](https://github.com/user-attachments/assets/f7aa0fb4-67fc-4eae-8672-b805dbb1ba88)
 
+![image](https://github.com/user-attachments/assets/628bdde0-614e-475b-99ee-e0af2ed121a0)
 
+![image](https://github.com/user-attachments/assets/6f5ed3a4-a166-4c89-bb1a-966f75295745)
+
+#### Authentication
+
+Now, we will be creating a user in Grafana for authentication purposes. Go to Home -> Administration -> Users and access -> Users.
+
+![image](https://github.com/user-attachments/assets/0c55c062-4ce5-4ab1-a258-635fa70edf84)
+
+Click on New User.
+
+![image](https://github.com/user-attachments/assets/06c148c8-e1e4-42ef-854d-43ff99aae5c5)
+
+In this way we can create a new user. Also, we can give admin access to the user after the user is created.
+
+![image](https://github.com/user-attachments/assets/9ab7402c-d919-454c-9fb0-7a2572d1445e)
 
