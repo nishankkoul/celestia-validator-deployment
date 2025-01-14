@@ -140,7 +140,7 @@
 
 - name: Set Seeds in Celestia configuration
   shell: |
-    SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/{{ celestia_chain_id }}/seeds.txt | tr '\n' ',')
+    SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-4/seeds.txt | tr '\n' ',')
     echo $SEEDS
     sed -i.bak -e "s/^seeds *=.*/seeds = \"$SEEDS\"/" $HOME/.celestia-app/config/config.toml
   tags: celestia_set_seeds
@@ -156,7 +156,7 @@
 
 - name: Set Persistent Peers in Celestia configuration
   shell: |
-    PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/{{ celestia_chain_id }}/peers.txt | tr '\n' ',')
+    PERSISTENT_PEERS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-4/peers.txt | tr '\n' ',')
     echo $PERSISTENT_PEERS
     sed -i.bak -e "s/^persistent_peers *=.*/persistent_peers = \"$PERSISTENT_PEERS\"/" $HOME/.celestia-app/config/config.toml
   tags: celestia_set_peers
@@ -210,19 +210,19 @@
   copy:
     content: |
       [Unit]
-      Description={{ celestia_service_name }}
+      Description=celestia-appd
       After=network-online.target
 
       [Service]
       User=root
-      ExecStart={{ celestia_service_exec }}
+      ExecStart=/usr/local/bin/celestia-appd start
       Restart=on-failure
       RestartSec=3
       LimitNOFILE=4096
 
       [Install]
       WantedBy=multi-user.target
-    dest: /etc/systemd/system/{{ celestia_service_name }}.service
+    dest: /etc/systemd/system/celestia-appd.service
     owner: root
     group: root
     mode: '0644'
@@ -280,14 +280,14 @@
   register: daemon_reload_result
   tags: reload_systemd
 
-- name: Enable {{ celestia_service_name }} service
+- name: Enable "{{ celestia_service_name }}" service
   systemd:
     name: "{{ celestia_service_name }}"
     enabled: true
   register: service_enable_result
   tags: enable_service
 
-- name: Start {{ celestia_service_name }} service
+- name: Start "{{ celestia_service_name }}" service
   systemd:
     name: "{{ celestia_service_name }}"
     state: started
