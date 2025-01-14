@@ -473,6 +473,12 @@ The command celestia-appd q staking validator $CELESTIA_VALOPER retrieves detail
 
 You have now successfully delegated tokens to your validator, contributing to the Celestia network.
 
+To verify that your validator is a part of the network, visit mintscan.io/celestia-testnet
+
+![image](https://github.com/user-attachments/assets/a44a4cff-8961-4991-9347-1c5d1a006cae)
+
+If the node gets more delegations, it will change to Active state.
+
 ### Monitoring using Prometheus and Grafana
 
 Metrics are a powerful tool for monitoring the health and performance of a system. Celestia provides support for metrics to make sure, as an operator, your system continues to remain up and running. Metrics can also provide critical insight into how Celestia is used and how it can be improved.
