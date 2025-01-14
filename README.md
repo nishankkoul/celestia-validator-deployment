@@ -362,3 +362,236 @@ ansible-vault encrypt /etc/celestia/valoper_address.txt
 
 You will be prompted to enter a password for encryption. After entering the password, the file will be encrypted, and the content will be securely stored.
 
+### Exposing Addresses within the Environment
+
+To expose the Celestia-related variables `CELESTIA_ADDR`, `CELESTIA_VALOPER`, and `CELESTIA_WALLET` within the environment, follow the steps below.
+
+#### Step 1: Expose `CELESTIA_WALLET`
+
+Export the `CELESTIA_WALLET` variable:
+
+```bash
+export CELESTIA_WALLET=<WALLET-NAME>
+echo $CELESTIA_WALLET
+echo 'export CELESTIA_WALLET='${CELESTIA_WALLET} >> $HOME/.bash_profile
+source $HOME/.bash_profile
+```
+
+Make sure to replace <WALLET-NAME> with your wallet name here.
+
+#### Step 2: Expose CELESTIA_ADDR
+
+Use the following commands to fetch the address and export it as CELESTIA_ADDR:
+
+```bash
+CELESTIA_ADDR=$(celestia-appd keys show $CELESTIA_WALLET -a)
+echo $CELESTIA_ADDR
+echo 'export CELESTIA_ADDR='${CELESTIA_ADDR} >> $HOME/.bash_profile
+source $HOME/.bash_profile
+```
+
+#### Step 3: Expose CELESTIA_VALOPER
+
+Use the following commands to fetch the validator operator address and export it as CELESTIA_VALOPER:
+
+```bash
+CELESTIA_VALOPER=$(celestia-appd keys show $CELESTIA_WALLET --bech val -a)
+echo $CELESTIA_VALOPER
+echo 'export CELESTIA_VALOPER='${CELESTIA_VALOPER} >> $HOME/.bash_profile
+source $HOME/.bash_profile
+```
+
+#### Step 4: Secure Sensitive Information
+
+Ensure that the .bash_profile is accessible only to the root user or the relevant system administrator to prevent unauthorized access to the environment variables.
+
+```bash
+chmod 600 $HOME/.bash_profile
+```
+
+By following these steps, you have successfully exposed the Celestia-related addresses and wallet information as environment variables, making them readily available for use in your scripts or commands.
+
+### Execute the `create_validator.sh` File to Create a Validator Node
+
+The `create_validator.sh` script is designed to create a validator node and securely store the generated information. Follow these steps to execute the script:
+
+#### Make the Script Executable and Execute it
+
+Before executing the script, ensure it has the appropriate permissions to run:
+
+```bash
+cd celestia-validator-deployment/celestia_validator/scripts
+chmod +x create_validator.sh
+./create_validator.sh
+```
+
+Make sure to replace the MONIKER with whatever alias you want to set your validator node with.
+
+```bash
+MONIKER="my-celestia-wallet"
+
+celestia-appd tx staking create-validator \
+    --amount=1000000utia \
+    --pubkey=$(celestia-appd tendermint show-validator) \
+    --moniker=$MONIKER \
+    --chain-id=mocha-4 \
+    --commission-rate=0.1 \
+    --commission-max-rate=0.2 \
+    --commission-max-change-rate=0.01 \
+    --min-self-delegation=1000000 \
+    --from=$CELESTIA_ADDR \
+    --keyring-backend=test \
+    --fees=21000utia \
+    --gas=220000
+```
+
+With the validator node successfully created, you are ready to move forward with additional configurations or interactions as needed.
+
+### Delegate to a Validator
+
+Delegating tokens to a validator is a critical step in supporting the Celestia network. Follow these steps to delegate tokens:
+
+#### Step 1: Execute the Delegation Command
+
+Run the following command to delegate 1,000,000 utia tokens to your validator:
+
+```bash
+celestia-appd tx staking delegate $CELESTIA_VALOPER 1000000utia --chain-id mocha --fees=420utia --from $CELESTIA-ADDR
+```
+
+The command ```bash celestia-appd tx staking delegate $CELESTIA_VALOPER 1000000utia --chain-id mocha --fees=420utia --from $CELESTIA-ADDR``` delegates 1,000,000 utia tokens from the wallet address stored in $CELESTIA-ADDR to the validator identified by $CELESTIA_VALOPER on the mocha testnet. It also deducts a transaction fee of 420 utia from the wallet. This action helps secure the network and allows the delegator to earn staking rewards over time. Ensure sufficient balance in the wallet for both the delegation and transaction fee.
+
+#### Step 2: Verify Delegation
+
+To ensure the delegation was successful, use the following command:
+
+```bash
+celestia-appd q staking validator $CELESTIA_VALOPER
+```
+
+The command celestia-appd q staking validator $CELESTIA_VALOPER retrieves detailed information about the validator associated with the $CELESTIA_VALOPER address. It provides details such as the validator's commission rates, public key, delegator shares, description (moniker, website, etc.), status (e.g., bonded or unbonded), total tokens staked, minimum self-delegation requirement, and other metadata. This command is useful for monitoring and verifying the validator's configuration and operational status within the Celestia network.
+
+You have now successfully delegated tokens to your validator, contributing to the Celestia network.
+
+### Monitoring using Prometheus and Grafana
+
+Metrics are a powerful tool for monitoring the health and performance of a system. Celestia provides support for metrics to make sure, as an operator, your system continues to remain up and running. Metrics can also provide critical insight into how Celestia is used and how it can be improved.
+
+#### Setup
+
+Celestia uses Prometheus to publish metrics. It can be enabled through the **$HOME/.celestia-app/config/config.toml** file.
+
+```bash
+#######################################################
+###       Instrumentation Configuration Options     ###
+#######################################################
+[instrumentation]
+
+# When true, Prometheus metrics are served under /metrics on
+# PrometheusListenAddr.
+# Check out the documentation for the list of available metrics.
+prometheus = true
+
+# Address to listen for Prometheus collector(s) connections
+prometheus_listen_addr = ":26660"
+
+# Maximum number of simultaneous connections.
+# If you want to accept a larger number than the default, make sure
+# you increase your OS limits.
+# 0 - unlimited.
+max_open_connections = 3
+
+# Instrumentation namespace
+namespace = "celestia"
+```
+
+#### Restart the Service and 
+
+Next, you need to restart the service using the command:
+
+```bash
+systemctl restart celestia-appd
+curl localhost:26660/metrics
+```
+
+You will now be able to see the metrics being scraped.
+
+#### Visualization
+
+Now your nodes are publishing metrics, we need something to scrape it and a visualizer to create a dashboard. Commonly, Prometheus is paired with Grafana.
+
+First, you will need to install Prometheus and for that execute the below command: 
+
+```bash
+sudo apt install prometheus -y
+```
+
+Next, create a config file $HOME/.celestia-app/config/prometheus.yml and fill out some basic settings as follows:
+
+```bash
+global:
+  scrape_interval: 15s # By default, scrape targets every 15 seconds.
+
+  # Attach these labels to any time series or alerts when communicating
+  # with external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: "codelab-monitor"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries
+  # scraped from this config.
+  - job_name: "prometheus"
+
+    # Override the global default and scrape targets from this job every
+    # 5 seconds.
+    scrape_interval: 5s
+
+    static_configs:
+      # Point to the same endpoint that Celestia is publishing on
+      - targets: ["localhost:26660"]
+```
+
+Note, that Prometheus by default runs its server on :9090. If you are running this on the same machine as your consensus node, it will collide with gRPC which runs on the same port. To avoid this, either switch off gRPC (if it's not needed), change the gRPC port in app.toml, or run Prometheus on a different port e.g. --web.listen-address="0.0.0.0:8080"
+
+To run the prometheus server:
+
+```bash
+prometheus --config.file=/root/.celestia-app/config/prometheus.yml --web.listen-address="0.0.0.0:8080" &
+```
+
+This will begin the server on **http://<EC2-IP-ADDRESS>:8080**
+
+![image](https://github.com/user-attachments/assets/51bd69c1-56d5-40bb-8c2a-c8df7b182d11)
+
+A prometheus server can scrape metrics from multiple nodes at once; a good way of bringing together information from many machines to one place.
+
+To visualize the information, you can use Grafana. For Grafana Installation, exeucte the below commands:
+
+```bash
+sudo apt-get update -y
+sudo apt-get upgrade -y 
+
+sudo apt-get install -y grafana
+
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server
+```
+
+This will begin the server on **http://<EC2-IP-ADDRESS>:3000**. If you open the url on your browser you will see the Grafana login page. Use admin for both the user and password to log in.
+
+![image](https://github.com/user-attachments/assets/acbb7b15-353a-45fb-acad-8b645b522b6c)
+
+You will need to link the prometheus server as a data source. To do that go to "Configuration" in the sidebar and then "Data Sources". Add a new data source specifying the URL of the Prometheus instance (http://<EC2-IP-ADDRESS>:9090). Click "Save & test" to confirm.
+
+![image](https://github.com/user-attachments/assets/932cc020-b8ee-462f-acd7-3dccaa439e1d)
+
+#### Dashboard
+
+Next, you will need to setup a dashboard. You can choose to do this yourself, handpicking the metrics that are important or you can simply export an existing design. Fortunately the cosmos ecosystem has conjured a "Cosmos Dashboard". On the sidebar, click "Dashboards" and then "import". Enter the following dashboard ID: 18459 and then link it to the "Prometheus" data source you just set up. Finally click the "Import" button and the "Cosmos Dashboard" should appear.
+
+![image](https://github.com/user-attachments/assets/4cfebbf3-8822-4c57-a2a5-7d28f9b30058)
+
+
+
