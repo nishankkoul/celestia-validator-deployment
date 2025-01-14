@@ -259,7 +259,7 @@ To check the current sync status of your node, run the following command:
 curl -s localhost:26657/status | jq .result | jq .sync_info
 ```
 
-**NOTE:** DO NOT PROCEED FORWARD TILL THE NODE IS IN SYNC COMPLETELY!
+**NOTE:** DO NOT PROCEED FORWARD TILL THE NODE IS IN SYNC COMPLETELY! ALSO, MAKE SURE TO KEEP MONITORING THE CPU USAGE USING THE 'top' COMMAND AND ADJUST THE INSTANCE TYPE ACCORDINGLY
 
 You can stay aware of the latest block height of the betwork gere: https://mocha.celenium.io/
 
