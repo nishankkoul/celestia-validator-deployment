@@ -456,7 +456,7 @@ Delegating tokens to a validator is a critical step in supporting the Celestia n
 Run the following command to delegate 1,000,000 utia tokens to your validator:
 
 ```bash
-celestia-appd tx staking delegate $CELESTIA_VALOPER 1000000utia --chain-id mocha --fees=420utia --from $CELESTIA-ADDR
+celestia-appd tx staking delegate $CELESTIA_VALOPER 1000000utia --chain-id mocha-4 --fees=420utia --from $CELESTIA-ADDR
 ```
 
 The command ```bash celestia-appd tx staking delegate $CELESTIA_VALOPER 1000000utia --chain-id mocha --fees=420utia --from $CELESTIA-ADDR``` delegates 1,000,000 utia tokens from the wallet address stored in $CELESTIA-ADDR to the validator identified by $CELESTIA_VALOPER on the mocha testnet. It also deducts a transaction fee of 420 utia from the wallet. This action helps secure the network and allows the delegator to earn staking rewards over time. Ensure sufficient balance in the wallet for both the delegation and transaction fee.
