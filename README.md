@@ -600,7 +600,7 @@ You will need to link the prometheus server as a data source. To do that go to "
 
 #### Dashboard
 
-Next, you will need to setup a dashboard. You can choose to do this yourself, handpicking the metrics that are important or you can simply export an existing design. Fortunately the cosmos ecosystem has conjured a "Cosmos Dashboard". On the sidebar, click "Dashboards" and then "import". Enter the following dashboard ID: 18459 and then link it to the "Prometheus" data source you just set up. Finally click the "Import" button and the "Cosmos Dashboard" should appear.
+Next, we will be setting up the dashboard for these metrics: CPU Usage, Disk Usage, Free Memory, Peer Connections, Block Height and Sync Status.
 
 ![image](https://github.com/user-attachments/assets/4cfebbf3-8822-4c57-a2a5-7d28f9b30058)
 
