@@ -582,7 +582,9 @@ To visualize the information, you can use Grafana. For Grafana Installation, exe
 sudo apt-get update -y
 sudo apt-get upgrade -y 
 
-sudo apt-get install -y grafana
+sudo apt-get install -y adduser libfontconfig1 musl
+wget https://dl.grafana.com/enterprise/release/grafana-enterprise_11.4.0_amd64.deb
+sudo dpkg -i grafana-enterprise_11.4.0_amd64.deb
 
 sudo systemctl start grafana-server
 sudo systemctl enable grafana-server
